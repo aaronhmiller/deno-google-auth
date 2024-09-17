@@ -4,3 +4,5 @@ This is best run in the Deno Deploy environment. You'll need to set these Deploy
 * BASE_URL (the URL of your Deno Project)
 * GOOGLE_CLIENT_ID (from your Google Console)
 * GOOGLE_CLIENT_SECRET (from same place)
+
+While you're in your Google Console, you should set `Authorized redirect URIs` to be the BASE_URL/callback.
