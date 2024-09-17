@@ -62,12 +62,26 @@ async function handler(request: Request): Promise<Response> {
       // Check if they've already signed in
       const sessionId = await getSessionId(request);
       if (sessionId) {
+        // Redirect to the home page
         const url = new URL(request.url);
         const redirectUrl = `${url.origin}/`;
-        // Redirect to the index page
         return Response.redirect(redirectUrl, 302);
-      } else {  
-        return await signIn(request);
+      } else {
+        // Generate a unique state parameter
+        const state = crypto.randomUUID();
+    
+        // Store the state in Deno KV using a unique key
+        const stateKey = crypto.randomUUID();
+        await kv.set(["oauth_state", stateKey], state);
+    
+        // Set a cookie with the stateKey
+        const response = await signIn(request, { state });
+        response.headers.append(
+          "Set-Cookie",
+          `stateKey=${stateKey}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+        );
+    
+        return response;
       }
     }
 
@@ -75,31 +89,61 @@ async function handler(request: Request): Promise<Response> {
 
     case "/callback": {
       try {
-        const sessionId = await getSessionId(request);
-        if (sessionId) {
-          // User is already signed in, redirect them
-          const url = new URL(request.url);
-          const redirectUrl = `${url.origin}/`;
-          return Response.redirect(redirectUrl, 302);
+        // Retrieve the state parameter from the callback URL
+        const url = new URL(request.url);
+        const returnedState = url.searchParams.get("state");
+        if (!returnedState) {
+          return new Response("State parameter is missing.", { status: 400 });
         }
     
-        // Proceed with the normal OAuth callback handling
+        // Get the stateKey from cookies
+        const cookieHeader = request.headers.get("Cookie") || "";
+        const cookies = new Map(
+          cookieHeader.split(";").map((c) => c.trim().split("=") as [string, string]),
+        );
+        const stateKey = cookies.get("stateKey");
+        if (!stateKey) {
+          return new Response("State key is missing in cookies.", { status: 400 });
+        }
+    
+        // Retrieve the stored state
+        const storedStateEntry = await kv.get(["oauth_state", stateKey]);
+        if (!storedStateEntry.value) {
+          return new Response("Stored state not found.", { status: 400 });
+        }
+        const storedState = storedStateEntry.value as string;
+    
+        // Validate the state
+        if (returnedState !== storedState) {
+          return new Response("Invalid state parameter.", { status: 400 });
+        }
+    
+        // State is valid; proceed with token exchange
         const { tokens } = await handleCallback(request);
     
-        // Redirect to fetch user info
-        const url = new URL(request.url);
-        const redirectUrl = `${url.origin}/fetch-user-info`;
+        // Now check if the user is already signed in
+        const sessionId = await getSessionId(request);
+        if (sessionId) {
+          // Redirect to home page
+          return Response.redirect(`${url.origin}/`, 302);
+        }
+
+
+        // Clean up the stored state and stateKey cookie
+        await kv.delete(["oauth_state", stateKey]);
     
-        // Create a new Response object for the redirect
-        return new Response(null, {
-          status: 302,
-          headers: {
-            "Location": redirectUrl,
-          },
-        });
+        const response = Response.redirect(`${url.origin}/fetch-user-info`, 302);
+        response.headers.append(
+          "Set-Cookie",
+          `stateKey=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
+        );
+    
+        return response;
       } catch (error) {
         console.error("Error in callback:", error);
-        return new Response("An error occurred during authentication.", { status: 500 });
+        return new Response("An error occurred during authentication.", {
+          status: 500,
+        });
       }
     }
 
