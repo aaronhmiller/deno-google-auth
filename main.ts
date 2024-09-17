@@ -111,9 +111,11 @@ async function handler(request: Request): Promise<Response> {
       }
 
       const response = await signOut(request);
-      response.headers.set(
+      response.headers.append(
         "Set-Cookie",
         "__Host-oauth-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
+      );
+      response.headers.append(
         "Set-Cookie",
         "__Host-site-session=; Path=/; Max-Age=0;	Secure; HttpOnly; SameSite=Lax",
       );
