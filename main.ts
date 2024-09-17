@@ -114,12 +114,9 @@ async function handler(request: Request): Promise<Response> {
       response.headers.set(
         "Set-Cookie",
         "__Host-oauth-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
-      );
-      response.headers.set(
         "Set-Cookie",
         "__Host-site-session=; Path=/; Max-Age=0;	Secure; HttpOnly; SameSite=Lax",
       );
-
 
       return response;
     }
