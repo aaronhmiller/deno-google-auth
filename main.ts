@@ -85,11 +85,7 @@ async function handler(request: Request): Promise<Response> {
 
         // Check if the email is allowed
         if (!ALLOWED_EMAILS.includes(userInfo.email)) {
-          const response = await signOut(request);
-          response.headers.append(
-            "Set-Cookie",
-            "__Host-oauth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; httponly; samesite=lax",
-          );
+          await signOut(request);
           await kv.delete(["site_sessions", sessionId]);
           const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}`);
           // Redirect to the index page
@@ -115,10 +111,10 @@ async function handler(request: Request): Promise<Response> {
       }
 
       const response = await signOut(request);
-      response.headers.append(
+      response.headers.set(
         "Set-Cookie",
-        "__Host-oauth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; httponly; samesite=lax",
-      );
+        "__Host-oauth-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
+      );      
 
       return response;
     }
