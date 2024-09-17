@@ -21,14 +21,16 @@ const ALLOWED_EMAILS = Deno.env.get("ALLOWED_EMAILS");
 const kv = await Deno.openKv();
 
 async function indexHandler(request: Request) {
+
   const sessionId = await getSessionId(request);
   const hasSessionIdCookie = sessionId !== undefined;
   let userEmail = "";
 
   if (hasSessionIdCookie) {
     const emailEntry = await kv.get(["user_email", sessionId]);
-    userEmail = emailEntry.value as string || "";
+    userEmail = (emailEntry.value as string) || "";
   }
+
 
   const body = `
     <p>Authorization endpoint URI: ${oauthConfig.authorizationEndpointUri}</p>
@@ -68,6 +70,42 @@ async function handler(request: Request): Promise<Response> {
         return await signIn(request);
       }
     }
+
+
+
+    case "/callback": {
+      try {
+        const sessionId = await getSessionId(request);
+        if (sessionId) {
+          // User is already signed in, redirect them
+          const url = new URL(request.url);
+          const redirectUrl = `${url.origin}/`;
+          return Response.redirect(redirectUrl, 302);
+        }
+    
+        // Proceed with the normal OAuth callback handling
+        const { response, tokens } = await handleCallback(request);
+    
+        // Fetch user info (if necessary)
+        // ...
+    
+        // Instead of setting the email here, redirect the user
+        const url = new URL(request.url);
+        const redirectUrl = `${url.origin}/fetch-user-info`;
+        response.headers.set("Location", redirectUrl);
+        response.status = 302;
+    
+        return response;
+      } catch (error) {
+        console.error("Error in callback:", error);
+        return new Response("An error occurred during authentication.", { status: 500 });
+      }
+    }    
+
+
+
+
+/*
     case "/callback": {
       try {
         const sessionId = await getSessionId(request);
@@ -110,6 +148,63 @@ async function handler(request: Request): Promise<Response> {
         return new Response(null, { status: STATUS_CODE.InternalServerError });
       }
     }
+*/
+
+    case "/fetch-user-info": {
+      try {
+        const sessionId = await getSessionId(request);
+        if (!sessionId) {
+          // User is not signed in, redirect to sign-in page
+          const url = new URL(request.url);
+          const redirectUrl = `${url.origin}/signin`;
+          return Response.redirect(redirectUrl, 302);
+        }
+    
+        // Retrieve the tokens from the session (if stored)
+        const tokens = await kv.get(["oauth_tokens", sessionId]);
+        if (!tokens.value) {
+          // Tokens not found, redirect to sign-in
+          const url = new URL(request.url);
+          const redirectUrl = `${url.origin}/signin`;
+          return Response.redirect(redirectUrl, 302);
+        }
+    
+        // Fetch user info
+        const userInfoResponse = await fetch(
+          "https://www.googleapis.com/oauth2/v2/userinfo",
+          {
+            headers: {
+              Authorization: `Bearer ${tokens.value.accessToken}`,
+            },
+          },
+        );
+        const userInfo = await userInfoResponse.json();
+    
+        // Check if the email is allowed
+        if (!ALLOWED_EMAILS.includes(userInfo.email)) {
+          await signOut(request);
+          return new Response("Access denied. Your email is not authorized.", {
+            status: 403,
+          });
+        }
+    
+        // Store the email in Deno KV
+        await kv.set(["user_email", sessionId], userInfo.email);
+    
+        // Redirect to the home page
+        const url = new URL(request.url);
+        const redirectUrl = `${url.origin}/`;
+        return Response.redirect(redirectUrl, 302);
+      } catch (error) {
+        console.error("Error in fetch-user-info:", error);
+        return new Response("An error occurred while fetching user info.", { status: 500 });
+      }
+    }
+    
+
+
+
+
     case "/signout": {
       const sessionId = await getSessionId(request);
       if (sessionId) {
