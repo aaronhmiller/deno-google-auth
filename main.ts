@@ -70,7 +70,15 @@ async function handler(request: Request): Promise<Response> {
     }
     case "/callback": {
       try {
-        const { response, tokens, sessionId } = await handleCallback(request);
+        const sessionId = await getSessionId(request);
+        if (sessionId) {
+          // User is already signed in, redirect them
+          const url = new URL(request.url);
+          const redirectUrl = `${url.origin}/`;
+          return Response.redirect(redirectUrl, 302);
+        }
+    
+        const { response, tokens, sessionId: newSessionId } = await handleCallback(request);
 
         // Fetch user info
         const userInfoResponse = await fetch(
