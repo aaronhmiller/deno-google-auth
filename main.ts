@@ -11,9 +11,9 @@ import { STATUS_CODE } from "jsr:@std/http@0.224.5/status";
 //    "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
 //});
 
-const { getSessionId, signIn, signOut, handleCallback } = createHelpers(
-  oauthConfig,
-);
+//const { getSessionId, signIn, signOut, handleCallback } = createHelpers(
+//  oauthConfig,
+//);
 
 const ALLOWED_EMAILS = Deno.env.get("ALLOWED_EMAILS");
 
