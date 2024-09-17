@@ -85,13 +85,9 @@ async function handler(request: Request): Promise<Response> {
 
         // Check if the email is allowed
         if (!ALLOWED_EMAILS.includes(userInfo.email)) {
-          const response = await signOut(request);
-          response.headers.set(
-            "Set-Cookie",
-            "__Host-oauth-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
-          );
+          await signOut(request);
           await kv.delete(["site_sessions", sessionId]);
-          const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}`);
+          const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}/signout`);
           // Redirect to the index page
           return Response.redirect(redirectUrl, 302);
 //          return new Response("Access denied. Your email is not authorized.", {
