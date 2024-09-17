@@ -20,6 +20,20 @@ const ALLOWED_EMAILS = Deno.env.get("ALLOWED_EMAILS");
 // Use Deno KV to store user emails
 const kv = await Deno.openKv();
 
+
+function parseCookies(cookieHeader: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  const pairs = cookieHeader.split(/; */);
+  for (const pair of pairs) {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex < 0) continue;
+    const key = decodeURIComponent(pair.slice(0, eqIndex).trim());
+    const val = decodeURIComponent(pair.slice(eqIndex + 1).trim());
+    cookies[key] = val;
+  }
+  return cookies;
+}
+
 async function indexHandler(request: Request) {
 
   const sessionId = await getSessionId(request);
