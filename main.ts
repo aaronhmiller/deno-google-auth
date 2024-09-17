@@ -5,15 +5,15 @@ import {
 } from "jsr:@deno/kv-oauth@0.11.0";
 import { STATUS_CODE } from "jsr:@std/http@0.224.5/status";
 
-//const oauthConfig = createGoogleOAuthConfig({
-//  redirectUri: `${Deno.env.get("BASE_URL")}/callback`,
-//  scope:
-//    "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-//});
+const oauthConfig = createGoogleOAuthConfig({
+  redirectUri: `${Deno.env.get("BASE_URL")}/callback`,
+  scope:
+    "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+});
 
-//const { getSessionId, signIn, signOut, handleCallback } = createHelpers(
-//  oauthConfig,
-//);
+const { getSessionId, signIn, signOut, handleCallback } = createHelpers(
+  oauthConfig,
+);
 
 const ALLOWED_EMAILS = Deno.env.get("ALLOWED_EMAILS");
 
