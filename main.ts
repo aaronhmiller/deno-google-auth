@@ -60,7 +60,10 @@ async function handler(request: Request): Promise<Response> {
       // Check if they've already signed in
       const sessionId = await getSessionId(request);
       if (sessionId) {
-        return Response.redirect("/", 302);
+        const url = new URL(request.url);
+        const redirectUrl = `${url.origin}/`;
+        // Redirect to the index page
+        return Response.redirect(redirectUrl, 302);
       } else {  
         return await signIn(request);
       }
