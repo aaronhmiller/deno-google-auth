@@ -60,9 +60,7 @@ async function handler(request: Request): Promise<Response> {
       // Check if they've already signed in
       const sessionId = await getSessionId(request);
       if (sessionId) {
-        return new Response("You're already signed in.", {
-          status: 200,
-        });
+        return Response.redirect("/", 302);
       } else {  
         return await signIn(request);
       }
