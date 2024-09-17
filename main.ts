@@ -86,6 +86,10 @@ async function handler(request: Request): Promise<Response> {
         // Check if the email is allowed
         if (!ALLOWED_EMAILS.includes(userInfo.email)) {
           await signOut(request);
+          const sessionId = await getSessionId(request);
+          if (sessionId) {
+            await kv.delete(["user_email", sessionId]);
+          }    
           return new Response("Access denied. Your email is not authorized.", {
             status: 403,
           });
