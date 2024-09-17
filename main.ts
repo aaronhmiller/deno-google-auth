@@ -91,8 +91,7 @@ async function handler(request: Request): Promise<Response> {
             "__Host-oauth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; httponly; samesite=lax",
           );
           await kv.delete(["site_sessions", sessionId]);
-          const url = new URL(request.url);
-          const redirectUrl = `${url.origin}/`;
+          const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}`);
           // Redirect to the index page
           return Response.redirect(redirectUrl, 302);
 //          return new Response("Access denied. Your email is not authorized.", {
