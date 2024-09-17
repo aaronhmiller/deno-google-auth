@@ -84,24 +84,24 @@ async function handler(request: Request): Promise<Response> {
         }
     
         // Proceed with the normal OAuth callback handling
-        const { response, tokens } = await handleCallback(request);
+        const { tokens } = await handleCallback(request);
     
-        // Fetch user info (if necessary)
-        // ...
-    
-        // Instead of setting the email here, redirect the user
+        // Redirect to fetch user info
         const url = new URL(request.url);
         const redirectUrl = `${url.origin}/fetch-user-info`;
-        response.headers.set("Location", redirectUrl);
-        response.status = 302;
     
-        return response;
+        // Create a new Response object for the redirect
+        return new Response(null, {
+          status: 302,
+          headers: {
+            "Location": redirectUrl,
+          },
+        });
       } catch (error) {
         console.error("Error in callback:", error);
         return new Response("An error occurred during authentication.", { status: 500 });
       }
-    }    
-
+    }
 
 
 
