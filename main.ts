@@ -93,7 +93,7 @@ async function handler(request: Request): Promise<Response> {
           await kv.delete(["site_sessions", sessionId]);
           const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}`);
           // Redirect to the index page
-          return response.redirect(redirectUrl, 302);
+          return Response.redirect(redirectUrl, 302);
 //          return new Response("Access denied. Your email is not authorized.", {
 //            status: 403,
 //          });
