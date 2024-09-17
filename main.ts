@@ -88,10 +88,6 @@ async function handler(request: Request): Promise<Response> {
           const response = await signOut(request);
           await kv.delete(["site_sessions", sessionId]);
           const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}`);
-          response.headers.set(
-            "Set-Cookie",
-            "__Host-site-session=; Path=/; Max-Age=0;	Secure; HttpOnly; SameSite=Lax",
-          );
           // Redirect to the index page
           return Response.redirect(redirectUrl, 302);
 //          return new Response("Access denied. Your email is not authorized.", {
@@ -118,7 +114,12 @@ async function handler(request: Request): Promise<Response> {
       response.headers.set(
         "Set-Cookie",
         "__Host-oauth-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
-      );      
+      );
+      response.headers.set(
+        "Set-Cookie",
+        "__Host-site-session=; Path=/; Max-Age=0;	Secure; HttpOnly; SameSite=Lax",
+      );
+
 
       return response;
     }
