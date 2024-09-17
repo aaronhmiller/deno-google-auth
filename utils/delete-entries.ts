@@ -9,7 +9,9 @@ const KV_UUID = env["KV_UUID"];
 let kv: Deno.Kv; //just for scope
 
 try {
-  kv = await Deno.openKv("https://api.deno.com/databases/" + `${KV_UUID}` + "/connect");
+  kv = await Deno.openKv(
+    "https://api.deno.com/databases/" + `${KV_UUID}` + "/connect",
+  );
 } catch (error) {
   console.log("Cannot connect to KV. Exiting.");
   Deno.exit(1);

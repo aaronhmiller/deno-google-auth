@@ -12,4 +12,5 @@ this tool, you should create one and populate it with a line like this:
 With that, the tool will run after prompting you for the prefix(es) to delete.
 
 ## Usage
+
 `deno run --unstable-kv -A delete-entries.ts`
