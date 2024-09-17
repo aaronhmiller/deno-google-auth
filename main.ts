@@ -88,11 +88,9 @@ async function handler(request: Request): Promise<Response> {
           await signOut(request);
           await kv.delete(["site_sessions", sessionId]);
           const redirectUrl = new URL(`${Deno.env.get("BASE_URL")}/signout`);
-          // Redirect to the index page
+          // Redirect to the signout page
           return Response.redirect(redirectUrl, 302);
-//          return new Response("Access denied. Your email is not authorized.", {
-//            status: 403,
-//          });
+
         }
 
         // Store the email in Deno KV
