@@ -57,7 +57,15 @@ async function handler(request: Request): Promise<Response> {
       return await indexHandler(request);
     }
     case "/signin": {
-      return await signIn(request);
+      // Check if they've already signed in
+      const sessionId = await getSessionId(request);
+      if (sessionId) {
+        return new Response("You're already signed in.", {
+          status: 204,
+        });
+      } else {  
+        return await signIn(request);
+      }
     }
     case "/callback": {
       try {
