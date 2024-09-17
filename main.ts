@@ -58,7 +58,7 @@ async function handler(request: Request): Promise<Response> {
     case "/": {
       return await indexHandler(request);
     }
-    
+
     case "/signin": {
       // Check if they've already signed in
       const sessionId = await getSessionId(request);
@@ -89,57 +89,61 @@ async function handler(request: Request): Promise<Response> {
     }
 
 
-    case "/callback": {
-      try {
-        // Retrieve the state parameter from the callback URL
-        const url = new URL(request.url);
-        const returnedState = url.searchParams.get("state");
-        if (!returnedState) {
-          return new Response("State parameter is missing.", { status: 400 });
-        }
-    
-        // Get the stateKey from cookies using the robust parser
-        const cookieHeader = request.headers.get("Cookie") || "";
-        const cookies = parseCookies(cookieHeader);
-        const stateKey = cookies["stateKey"];
-        if (!stateKey) {
-          return new Response("State key is missing in cookies.", { status: 400 });
-        }
-    
-        // Retrieve the stored state
-        const storedStateEntry = await kv.get(["oauth_state", stateKey]);
-        if (!storedStateEntry.value) {
-          return new Response("Stored state not found.", { status: 400 });
-        }
-        const storedState = storedStateEntry.value as string;
-    
-        // Validate the state
-        if (returnedState !== storedState) {
-          return new Response("Invalid state parameter.", { status: 400 });
-        }
-    
-        // State is valid; proceed with token exchange
-        const { tokens } = await handleCallback(request);
-    
-        // Clean up the stored state and stateKey cookie
-        await kv.delete(["oauth_state", stateKey]);
-    
-        const response = new Response(null, {
-          status: 302,
-          headers: {
-            "Location": `${url.origin}/fetch-user-info`,
-            "Set-Cookie": `stateKey=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
-          },
-        });
-    
-        return response;
-      } catch (error) {
-        console.error("Error in callback:", error);
-        return new Response("An error occurred during authentication.", {
-          status: 500,
-        });
-      }
+case "/callback": {
+  try {
+    const url = new URL(request.url);
+    const returnedState = url.searchParams.get("state");
+    if (!returnedState) {
+      console.error("State parameter is missing.");
+      return new Response("State parameter is missing.", { status: 400 });
     }
+
+    const cookieHeader = request.headers.get("Cookie") || "";
+    const cookies = parseCookies(cookieHeader);
+    const stateKey = cookies["stateKey"];
+    if (!stateKey) {
+      console.error("State key is missing in cookies.");
+      return new Response("State key is missing in cookies.", { status: 400 });
+    }
+
+    const storedStateEntry = await kv.get(["oauth_state", stateKey]);
+    if (!storedStateEntry.value) {
+      console.error("Stored state not found for stateKey:", stateKey);
+      return new Response("Stored state not found.", { status: 400 });
+    }
+    const storedState = storedStateEntry.value as string;
+
+    console.log("Returned state:", returnedState);
+    console.log("Stored state:", storedState);
+
+    if (returnedState !== storedState) {
+      console.error("Invalid state parameter. Returned:", returnedState, "Expected:", storedState);
+      return new Response("Invalid state parameter.", { status: 400 });
+    }
+
+    // Proceed with token exchange
+    const { tokens } = await handleCallback(request);
+
+    // Clean up
+    await kv.delete(["oauth_state", stateKey]);
+
+    const response = new Response(null, {
+      status: 302,
+      headers: {
+        "Location": `${url.origin}/fetch-user-info`,
+        // Adjust 'Secure' based on environment
+        "Set-Cookie": `stateKey=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
+      },
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Error in callback:", error.message, error.stack);
+    return new Response("An error occurred during authentication.", {
+      status: 500,
+    });
+  }
+}
 
 
 /*
