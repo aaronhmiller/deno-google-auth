@@ -10,7 +10,7 @@ let kv: Deno.Kv; //just for scope
 
 try {
   kv = await Deno.openKv(
-    "https://api.deno.com/databases/" + `${KV_UUID}` + "/connect",
+    `https://api.deno.com/databases/${KV_UUID}/connect`,
   );
 } catch (error) {
   console.log("Cannot connect to KV. Exiting.");
