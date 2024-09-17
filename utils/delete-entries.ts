@@ -4,15 +4,20 @@ import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
 
 const env = await load();
 Deno.env.set("DENO_KV_ACCESS_TOKEN", env["KV_ACCESS_TOKEN"]);
+const KV_UUID = env["KV_UUID"];
 
-const kv = await Deno.openKv(
-  "https://api.deno.com/databases/8d23c11a-7f32-49c9-8538-65efabb15ce6/connect",
-);
+let kv: Deno.Kv; //just for scope
 
+try {
+  kv = await Deno.openKv("https://api.deno.com/databases/" + `${KV_UUID}` + "/connect");
+} catch (error) {
+  console.log("Cannot connect to KV. Exiting.");
+  Deno.exit(1);
+}
 const prefix = prompt("What prefix:");
 
 // List all entries with the prompted prefix
-const entries = kv.list({ prefix: [prefix] });
+const entries = await kv.list({ prefix: [prefix] });
 
 // Iterate over the entries and delete them
 for await (const entry of entries) {
